@@ -1,0 +1,59 @@
+# AI Software Engineer Docker Image
+# ==================================
+
+# Environments
+.env*
+!.env.example
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# Runtime
+*.pid
+*.seed
+*.pid.lock
+
+# Dependency directories
+node_modules/
+
+# Optional directories
+.npm
+.eslintcache
+
+# Build outputs
+dist/
+build/
+out/
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Docker related (for development)
+.docker/
+
+# Local development overrides
+docker-compose.override.yml
+docker-compose.local.yml

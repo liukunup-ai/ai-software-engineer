@@ -30,27 +30,27 @@ help: ## 显示帮助信息
 	@echo -e "  $(YELLOW)IMAGE_TAG$(NC)       镜像标签 (默认: $(IMAGE_TAG))"
 	@echo -e "  $(YELLOW)CONTAINER_NAME$(NC)  容器名称 (默认: $(CONTAINER_NAME))"
 
-build: ## 构建Docker镜像
-	@echo -e "$(BLUE)构建 Docker 镜像: $(FULL_IMAGE_NAME)$(NC)"
+build: ## 构建镜像
+	@echo "$(BLUE)构建 Docker 镜像: $(FULL_IMAGE_NAME)$(NC)"
 	docker build -t $(FULL_IMAGE_NAME) .
-	@echo -e "$(GREEN)✓ 镜像构建完成!$(NC)"
+	@echo "$(GREEN)✓ 镜像构建完成!$(NC)"
 
 build-no-cache: ## 强制重新构建（不使用缓存）
-	@echo -e "$(BLUE)强制重新构建 Docker 镜像: $(FULL_IMAGE_NAME)$(NC)"
+	@echo "$(BLUE)强制重新构建 Docker 镜像: $(FULL_IMAGE_NAME)$(NC)"
 	docker build --no-cache -t $(FULL_IMAGE_NAME) .
-	@echo -e "$(GREEN)✓ 镜像构建完成!$(NC)"
+	@echo "$(GREEN)✓ 镜像构建完成!$(NC)"
 
 run: ## 运行容器（后台模式）
-	@echo -e "$(BLUE)启动容器: $(CONTAINER_NAME)$(NC)"
+	@echo "$(BLUE)启动容器: $(CONTAINER_NAME)$(NC)"
 	docker run -d --name $(CONTAINER_NAME) $(FULL_IMAGE_NAME)
-	@echo -e "$(GREEN)✓ 容器已启动!$(NC)"
+	@echo "$(GREEN)✓ 容器已启动!$(NC)"
 
 run-interactive: ## 交互式运行容器
-	@echo -e "$(BLUE)交互式运行容器$(NC)"
+	@echo "$(BLUE)交互式运行容器$(NC)"
 	docker run -it --rm $(FULL_IMAGE_NAME)
 
 run-dev: ## 开发模式运行（挂载当前目录）
-	@echo -e "$(BLUE)开发模式运行容器$(NC)"
+	@echo "$(BLUE)开发模式运行容器$(NC)"
 	docker run -it --rm -v $$(pwd):/workspace -w /workspace $(FULL_IMAGE_NAME)
 
 run-with-docker: ## 运行容器并挂载Docker socket（危险：仅在安全环境使用）

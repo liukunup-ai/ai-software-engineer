@@ -14,8 +14,8 @@ source ~/.bashrc
 ln -sf "$HOME/.local/bin/cursor-agent" /usr/local/bin/cursor-agent
 
 # 验证是否安装成功
-if ! command -v qodercli &> /dev/null; then
-    echo "Error: Alibaba Qoder CLI installation failed."
+if ! command -v cursor-agent &> /dev/null; then
+    echo "Error: Cursor CLI installation failed."
     exit 1
 fi
 

@@ -144,12 +144,6 @@ compose-logs: ## 查看 docker-compose 日志
 	@echo -e "$(BLUE)查看 docker-compose 日志$(NC)"
 	docker-compose logs -f
 
-# 开发工具
-format: ## 格式化代码文件
-	@echo -e "$(BLUE)格式化代码文件$(NC)"
-	# 这里可以添加代码格式化命令
-	@echo -e "$(GREEN)✓ 格式化完成!$(NC)"
-
 lint: shell-check ## 运行代码检查
 	@echo -e "$(GREEN)✓ 代码检查完成!$(NC)"
 

@@ -1,106 +1,61 @@
-name: Build and Test Docker Image
+name: CI/CD Pipeline for Docker Image
 
 on:
-  push:
-    branches: [ main, develop ]
   pull_request:
-    branches: [ main ]
-  release:
-    types: [ published ]
+    branches: ["main"]
+  push:
+    branches: ["main"]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
 
 env:
   IMAGE_NAME: ai-software-engineer
-  REGISTRY: ghcr.io
 
 jobs:
-  build-and-test:
-    runs-on: ubuntu-latest
+
+  build:
+    name: Build Docker Image
+    runs-on: ubuntu-24.04
     permissions:
-      contents: read
       packages: write
-
+      contents: read
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-    - name: Log in to Container Registry
-      if: github.event_name != 'pull_request'
-      uses: docker/login-action@v3
-      with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest
 
-    - name: Extract metadata
-      id: meta
-      uses: docker/metadata-action@v5
-      with:
-        images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
-        tags: |
-          type=ref,event=branch
-          type=ref,event=pr
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}
-          type=raw,value=latest,enable={{is_default_branch}}
+      - name: Build and Push Docker Images
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          file: Dockerfile
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
 
-    - name: Build Docker image
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        load: true
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-
-    - name: Test Docker image
-      run: |
-        # 基本功能测试
-        echo "Testing basic functionality..."
-        docker run --rm ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest bash -c "which gh && which node && which python3"
-        
-        # 测试脚本执行权限
-        echo "Testing script permissions..."
-        docker run --rm ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest bash -c "ls -la /app/scripts/"
-        
-        # 测试入口脚本
-        echo "Testing entrypoint script..."
-        docker run --rm ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest echo "Container starts successfully"
-
-    - name: Run security scan
-      uses: aquasecurity/trivy-action@master
-      with:
-        image-ref: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
-        format: 'sarif'
-        output: 'trivy-results.sarif'
-
-    - name: Upload Trivy scan results to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@v3
-      if: always()
-      with:
-        sarif_file: 'trivy-results.sarif'
-
-    - name: Push Docker image
-      if: github.event_name != 'pull_request'
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Run shellcheck
-      uses: ludeeus/action-shellcheck@master
-      with:
-        scandir: './scripts'
+      - name: Update Docker Hub Repository Description
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+          repository: ${{ env.DOCKER_HUB_REPO }}

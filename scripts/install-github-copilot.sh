@@ -1,20 +1,21 @@
 #!/bin/bash
 # Install GitHub Copilot CLI
 
-set -e
+echo "Installing GitHub Copilot CLI ..."
 
-echo "Installing GitHub Copilot CLI..."
+# 检查 npm 是否已安装
+if ! command -v npm &> /dev/null; then
+    echo "Error: please install Node.js and npm first."
+    exit 1
+fi
 
-# Install GitHub CLI first (required dependency)
-curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
-sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-sudo apt update
-sudo apt install -y gh
+# 使用 npm 全局安装 GitHub Copilot CLI
+npm install -g @github/copilot
 
-# Install GitHub Copilot CLI extension
-gh extension install github/gh-copilot
+# 验证是否安装成功
+if ! command -v copilot &> /dev/null; then
+    echo "Error: GitHub Copilot CLI installation failed."
+    exit 1
+fi
 
-echo "GitHub Copilot CLI installed successfully!"
-echo "Usage: gh copilot suggest 'your task here'"
-echo "Note: You'll need to authenticate with 'gh auth login' first"
+echo "🎉🎉🎉 GitHub Copilot CLI has been installed successfully!"

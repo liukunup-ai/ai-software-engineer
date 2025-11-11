@@ -24,6 +24,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_$NODEJS_VERSION | bash - \
 COPY scripts/ /opt/scripts/
 RUN chmod +x /opt/scripts/*.sh \
     && bash /opt/scripts/install-github-copilot.sh \
+    && bash /opt/scripts/install-openai-codex.sh \
     && bash /opt/scripts/install-cursor.sh \
     && bash /opt/scripts/install-alibaba-qoder.sh \
     && bash /opt/scripts/install-tencent-codebuddy.sh

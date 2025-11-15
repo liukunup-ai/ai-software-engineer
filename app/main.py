@@ -1,12 +1,9 @@
 """
-AI Software Engineer - Worker Node
-
-运行模式:
-- Standalone 独立容器
-- Worker 从节点
+AI Software Engineer Worker Node
 """
 
 import asyncio
+import logging
 import os
 import socket
 import time
@@ -16,7 +13,18 @@ from typing import List, Optional
 
 import httpx
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
+
+
+# 配置日志
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler("ai-software-engineer.log"),
+        logging.StreamHandler()  # 同时输出到控制台
+    ]
+)
 
 
 # 命令配置
@@ -67,10 +75,10 @@ async def register() -> Optional[uuid.UUID]:
             response.raise_for_status()
             data = response.json()
             node_id = (uuid.UUID(data["id"]) if isinstance(data["id"], str) else data["id"])
-            print(f"✅ 成功注册到主节点: {REGISTER_URL}, 节点ID: {node_id}")
+            logging.info(f"✅ 成功注册到主节点: {REGISTER_URL}, 节点ID: {node_id}")
             return node_id
     except Exception as e:
-        print(f"❌ 注册失败: {e}")
+        logging.error(f"❌ 注册失败: {e}")
         return None
 
 
@@ -80,7 +88,7 @@ async def heartbeat() -> None:
     global node_id
 
     if not node_id:
-        print("⚠️ 节点未注册，跳过心跳")
+        logging.warning("⚠️ 节点未注册，跳过心跳")
         return
 
     try:
@@ -93,9 +101,9 @@ async def heartbeat() -> None:
                 },
             )
             response.raise_for_status()
-            print(f"💓 心跳发送成功, 节点ID: {node_id}, 当前时间: {time.strftime('%Y-%m-%d %H:%M:%S')}")
+            logging.info(f"💓 心跳发送成功, 节点ID: {node_id}, 当前时间: {time.strftime('%Y-%m-%d %H:%M:%S')}")
     except Exception as e:
-        print(f"❌ 心跳发送失败: {e}")
+        logging.error(f"❌ 心跳发送失败: {e}")
 
 
 async def heartbeat_loop() -> None:
@@ -121,19 +129,19 @@ async def lifespan(app: FastAPI):
 
     # 启动阶段
     if NODE_MODE == "standalone":
-        print("🚀 启动模式: Standalone (独立容器)")
-        print(f"📦 节点名称: {NODE_NAME}")
-        print("🔧 仅提供容器环境")
+        logging.info("🚀 启动模式: Standalone (独立容器)")
+        logging.info(f"📦 节点名称: {NODE_NAME}")
+        logging.info("🔧 仅提供容器环境")
     else:
-        print("🚀 启动模式: Worker (从节点)")
-        print(f"🏭 节点名称: {NODE_NAME} ({NODE_HOST})")
-        print(f"📡 后端地址: {REGISTER_URL}")
+        logging.info("🚀 启动模式: Worker (从节点)")
+        logging.info(f"🏭 节点名称: {NODE_NAME} ({NODE_HOST})")
+        logging.info(f"📡 后端地址: {REGISTER_URL}")
 
         # 注册节点
         await register()
         # 启动心跳任务
         heartbeat_task = asyncio.create_task(heartbeat_loop())
-        print(f"💓 心跳任务已启动 (心跳间隔: {HEARTBEAT_INTERVAL} 秒)")
+        logging.info(f"💓 心跳任务已启动 (心跳间隔: {HEARTBEAT_INTERVAL} 秒)")
 
     yield
 
@@ -144,7 +152,7 @@ async def lifespan(app: FastAPI):
             await heartbeat_task
         except asyncio.CancelledError:
             pass
-    print("👋 节点已关闭")
+    logging.info("👋 节点已关闭")
 
 
 class CommandRequest(BaseModel):

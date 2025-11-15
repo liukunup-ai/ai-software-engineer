@@ -29,7 +29,7 @@ DEFAULT_TIMEOUT = float(os.getenv("COMMAND_TIMEOUT", "15"))  # 执行超时时�
 NODE_MODE = os.getenv("NODE_MODE", "worker").lower()
 
 # 后端配置（仅在 worker 模式下需要）
-REGISTER_URL = os.getenv("REGISTER_URL", "http://localhost:8001")  # 注册地址
+REGISTER_URL = os.getenv("REGISTER_URL", "http://localhost:8000")  # 注册地址
 REGISTER_KEY = os.getenv("REGISTER_KEY", "please-input-your-key")  # 注册密钥
 NODE_NAME = os.getenv("NODE_NAME", socket.gethostname())  # 从节点名称
 NODE_HOST = os.getenv("NODE_HOST", "127.0.0.1")  # 主机地址
@@ -55,7 +55,7 @@ async def register() -> Optional[uuid.UUID]:
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.post(
-                f"{REGISTER_URL}/register",
+                f"{REGISTER_URL}/api/v1/nodes/register",
                 json={
                     "name": NODE_NAME,
                     "host": NODE_HOST,
@@ -66,7 +66,7 @@ async def register() -> Optional[uuid.UUID]:
             )
             response.raise_for_status()
             data = response.json()
-            node_id = (uuid.UUID(data["node_id"]) if isinstance(data["node_id"], str) else data["node_id"])
+            node_id = (uuid.UUID(data["id"]) if isinstance(data["id"], str) else data["id"])
             print(f"✅ 成功注册到主节点: {REGISTER_URL}, 节点ID: {node_id}")
             return node_id
     except Exception as e:
@@ -86,14 +86,14 @@ async def heartbeat() -> None:
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.post(
-                f"{REGISTER_URL}/heartbeat",
+                f"{REGISTER_URL}/api/v1/nodes/heartbeat",
                 json={
                     "node_id": str(node_id),
                     "register_key": REGISTER_KEY,
                 },
             )
             response.raise_for_status()
-            print(f"💓 心跳发送成功, 节点ID: {node_id}")
+            print(f"💓 心跳发送成功, 节点ID: {node_id}, 当前时间: {time.strftime('%Y-%m-%d %H:%M:%S')}")
     except Exception as e:
         print(f"❌ 心跳发送失败: {e}")
 
@@ -257,4 +257,4 @@ async def execute_command(payload: CommandRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("src.main:app", host="0.0.0.0", port=8000, reload=False)
+    uvicorn.run("src.main:app", host="0.0.0.0", port=8001, reload=False)

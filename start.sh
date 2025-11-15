@@ -62,7 +62,7 @@ ${YELLOW}示例:${NC}
     $0 --test-mode
 
     # 使用环境变量
-    REGISTER_URL=http://backend:8001 REGISTER_KEY=key $0
+    REGISTER_URL=http://127.0.0.1:8000 REGISTER_KEY=key $0
 
 ${YELLOW}快捷方式:${NC}
     启动服务: ${GREEN}./start.sh${NC}

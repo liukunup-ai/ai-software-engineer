@@ -6,7 +6,7 @@ set -euo pipefail
 
 # 启动参数
 export HOST="${HOST:-0.0.0.0}"         # 服务监听地址
-export PORT="${PORT:-8010}"            # 服务端口
+export PORT="${PORT:-8007}"            # 服务端口
 export LOG_LEVEL="${LOG_LEVEL:-info}"  # 日志级别
 export RELOAD="${RELOAD:-false}"       # 是否热重载
 

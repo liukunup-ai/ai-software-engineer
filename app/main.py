@@ -257,4 +257,4 @@ async def execute_command(payload: CommandRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("src.main:app", host="0.0.0.0", port=8001, reload=False)
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8008, reload=False)

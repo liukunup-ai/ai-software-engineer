@@ -177,7 +177,7 @@ start_service() {
     export COMMAND_TIMEOUT
     
     # 启动服务
-    python3 -m uvicorn src.main:app \
+    python3 -m uvicorn app.main:app \
         --host "$HOST" \
         --port "$PORT" \
         $reload_flag

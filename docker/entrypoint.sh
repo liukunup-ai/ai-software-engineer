@@ -5,10 +5,11 @@
 set -euo pipefail
 
 # 默认环境变量
-export HOST="${HOST:-0.0.0.0}"         # 监听地址
-export PORT="${PORT:-8007}"            # 监听端口
-export LOG_LEVEL="${LOG_LEVEL:-info}"  # 日志级别
-export RELOAD="${RELOAD:-false}"       # 是否热重载
+export HOST="${HOST:-0.0.0.0}"             # 监听地址
+export PORT="${PORT:-8007}"                # 监听端口
+export LOG_LEVEL="${LOG_LEVEL:-info}"      # 日志级别
+export RELOAD="${RELOAD:-false}"           # 是否热重载
+export AISE_ENV="${AISE_ENV:-production}"  # 环境标识
 
 # 将 NODE_PORT 设置为与 PORT 相同
 export NODE_PORT="${NODE_PORT:-${PORT}}"

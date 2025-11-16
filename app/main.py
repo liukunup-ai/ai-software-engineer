@@ -4,6 +4,7 @@ AI Software Engineer Worker Node
 
 import asyncio
 import logging
+import logging.config
 import os
 import socket
 import time
@@ -16,15 +17,55 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 
+# 环境标识 (production/staging/testing/dev)
+AISE_ENV = os.getenv("AISE_ENV", "dev").lower()
+
+
 # 日志配置
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler("ai-software-engineer.log"),
-        logging.StreamHandler()  # 同时输出到控制台
-    ]
-)
+def get_log_file_path():
+    """根据运行环境确定日志文件路径"""    
+    # 仅在生产/预发环境时使用 /var/log/ 目录
+    if AISE_ENV in ["production", "staging"]:
+        log_dir = "/var/log"
+        if os.path.exists(log_dir) and os.access(log_dir, os.W_OK):
+            return os.path.join(log_dir, "ai-software-engineer.log")
+
+    # 其他环境（开发、测试、...）使用当前目录
+    return "ai-software-engineer.log"
+
+
+# 获取日志文件路径
+log_file_path = get_log_file_path()
+
+
+# 配置日志
+LOGGING_CONFIG = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "default": {
+            "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "default",
+        },
+        "file": {
+            "class": "logging.FileHandler",
+            "filename": log_file_path,
+            "formatter": "default",
+        },
+    },
+    "root": {
+        "level": "INFO",
+        "handlers": ["console", "file"],
+    },
+}
+
+# 应用日志配置
+logging.config.dictConfig(LOGGING_CONFIG)
 
 
 # 命令 & 配置（支持运行时更新）

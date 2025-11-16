@@ -29,6 +29,13 @@ help: ## 显示帮助信息
 	@echo "  $(YELLOW)IMAGE_NAME$(NC)      镜像名称 (默认: $(IMAGE_NAME))"
 	@echo "  $(YELLOW)IMAGE_TAG$(NC)       镜像标签 (默认: $(IMAGE_TAG))"
 	@echo "  $(YELLOW)CONTAINER_NAME$(NC)  容器名称 (默认: $(CONTAINER_NAME))"
+	@echo ""
+	@echo "$(GREEN)CLI 工具安装控制参数:$(NC)"
+	@echo "  $(YELLOW)INSTALL_GITHUB_COPILOT$(NC)    GitHub Copilot CLI (默认: true)"
+	@echo "  $(YELLOW)INSTALL_OPENAI_CODEX$(NC)      OpenAI Codex CLI (默认: true)"
+	@echo "  $(YELLOW)INSTALL_CURSOR$(NC)            Cursor CLI (默认: true)"
+	@echo "  $(YELLOW)INSTALL_ALIBABA_QODER$(NC)     Alibaba Qoder CLI (默认: true)"
+	@echo "  $(YELLOW)INSTALL_TENCENT_CODEBUDDY$(NC) Tencent Codebuddy CLI (默认: true)"
 
 build: ## 构建镜像
 	@echo "$(BLUE)构建 Docker 镜像: $(FULL_IMAGE_NAME)$(NC)"
@@ -40,14 +47,36 @@ build-no-cache: ## 强制重新构建（不使用缓存）
 	docker build --no-cache -f docker/Dockerfile -t $(FULL_IMAGE_NAME) .
 	@echo "$(GREEN)✓ 镜像构建完成!$(NC)"
 
+build-minimal: ## 构建最小化镜像（仅安装必要工具）
+	@echo "$(BLUE)构建最小化 Docker 镜像: $(FULL_IMAGE_NAME)$(NC)"
+	docker build -f docker/Dockerfile \
+		--build-arg INSTALL_GITHUB_COPILOT=false \
+		--build-arg INSTALL_OPENAI_CODEX=false \
+		--build-arg INSTALL_CURSOR=false \
+		--build-arg INSTALL_ALIBABA_QODER=false \
+		--build-arg INSTALL_TENCENT_CODEBUDDY=false \
+		-t $(FULL_IMAGE_NAME)-minimal .
+	@echo "$(GREEN)✓ 最小化镜像构建完成!$(NC)"
+
+build-custom: ## 构建自定义镜像（通过环境变量控制CLI工具安装）
+	@echo "$(BLUE)构建自定义 Docker 镜像: $(FULL_IMAGE_NAME)$(NC)"
+	docker build -f docker/Dockerfile \
+		--build-arg INSTALL_GITHUB_COPILOT=$(or $(INSTALL_GITHUB_COPILOT),true) \
+		--build-arg INSTALL_OPENAI_CODEX=$(or $(INSTALL_OPENAI_CODEX),true) \
+		--build-arg INSTALL_CURSOR=$(or $(INSTALL_CURSOR),true) \
+		--build-arg INSTALL_ALIBABA_QODER=$(or $(INSTALL_ALIBABA_QODER),true) \
+		--build-arg INSTALL_TENCENT_CODEBUDDY=$(or $(INSTALL_TENCENT_CODEBUDDY),true) \
+		-t $(FULL_IMAGE_NAME) .
+	@echo "$(GREEN)✓ 自定义镜像构建完成!$(NC)"
+
 run: ## 运行容器（后台模式）
 	@echo "$(BLUE)启动容器: $(CONTAINER_NAME)$(NC)"
-	docker run -d -e REGISTER_URL="http://192.168.101.168:8000" -e REGISTER_KEY="zgCdSL9imWQhl9L9xZPeK1U_eprXqeAzKEs99jSHUZ0" -e NODE_HOST="192.168.101.168" -e TZ=Asia/Shanghai --restart unless-stopped --name $(CONTAINER_NAME) $(FULL_IMAGE_NAME)
+	docker run -d -e REGISTER_URL="" -e REGISTER_KEY="" -e NODE_HOST="" -e TZ=Asia/Shanghai --restart unless-stopped --name $(CONTAINER_NAME) $(FULL_IMAGE_NAME)
 	@echo "$(GREEN)✓ 容器已启动!$(NC)"
 
 run-interactive: ## 交互式运行容器
 	@echo "$(BLUE)交互式运行容器$(NC)"
-	docker run -it --rm -e REGISTER_URL="http://192.168.101.168:8000" -e REGISTER_KEY="zgCdSL9imWQhl9L9xZPeK1U_eprXqeAzKEs99jSHUZ0" -e NODE_HOST="192.168.101.168" -e TZ=Asia/Shanghai $(FULL_IMAGE_NAME)
+	docker run -it --rm -e NODE_MODE=standalone -e TZ=Asia/Shanghai $(FULL_IMAGE_NAME)
 
 exec: ## 进入运行中的容器
 	@echo "$(BLUE)进入容器: $(CONTAINER_NAME)$(NC)"

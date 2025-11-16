@@ -1,6 +1,3 @@
-# AI Software Engineer Docker Image
-# ==================================
-
 # Environments
 .env*
 !.env.example
@@ -57,3 +54,6 @@ coverage/
 # Local development overrides
 docker-compose.override.yml
 docker-compose.local.yml
+
+.venv
+**/__pycache__

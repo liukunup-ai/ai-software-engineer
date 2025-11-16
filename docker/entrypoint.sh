@@ -11,7 +11,7 @@ export LOG_LEVEL="${LOG_LEVEL:-info}"  # 日志级别
 export RELOAD="${RELOAD:-false}"       # 是否热重载
 
 # 将 NODE_PORT 设置为与 PORT 相同
-export NODE_PORT="${PORT}"
+export NODE_PORT="${NODE_PORT:-${PORT}}"
 
 # 根据 RELOAD 变量设置热重载标志
 reload_flag=""

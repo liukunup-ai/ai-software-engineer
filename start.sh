@@ -12,26 +12,26 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # 默认配置
-PORT=${PORT:-8000}
 HOST=${HOST:-0.0.0.0}
+PORT=${PORT:-8007}
 RELOAD=${RELOAD:-true}
-REGISTER_URL=${REGISTER_URL:-http://localhost:8001}
-REGISTER_KEY=${REGISTER_KEY:-default-key}
+REGISTER_URL=${REGISTER_URL:-http://localhost:8000}
+REGISTER_KEY=${REGISTER_KEY:-key}
 NODE_NAME=${NODE_NAME:-$(hostname)}
 
 # 打印帮助信息
 print_help() {
     cat << EOF
-${GREEN}AI Software Engineer Worker Node - 启动脚本${NC}
+${GREEN}AI Software Engineer - 启动脚本${NC}
 
 ${YELLOW}用法:${NC}
     $0 [OPTIONS]
 
 ${YELLOW}选项:${NC}
-    -p, --port PORT           服务端口 (默认: 8000)
     -H, --host HOST           监听地址 (默认: 0.0.0.0)
-    -b, --register URL        后端服务地址 (默认: http://localhost:8001)
-    -k, --key KEY             注册密钥 (默认: please-input-your-key)
+    -p, --port PORT           服务端口 (默认: 8007)
+    -b, --register URL        后端服务地址 (默认: http://localhost:8000)
+    -k, --key KEY             注册密钥 (默认: key)
     -n, --name NAME           节点名称 (默认: 主机名)
     --no-reload               禁用自动重载
     --install                 安装依赖后启动
@@ -53,7 +53,7 @@ ${YELLOW}示例:${NC}
     $0
 
     # 指定端口和后端地址
-    $0 -p 9000 -b http://192.168.1.8:8001
+    $0 -p 9000 -b http://192.168.1.8:8000
 
     # 安装依赖后启动
     $0 --install

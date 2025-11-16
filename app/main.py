@@ -9,7 +9,7 @@ import socket
 import time
 import uuid
 from contextlib import asynccontextmanager
-from typing import List, Optional
+from typing import List, Optional, Set
 
 import httpx
 from fastapi import FastAPI, HTTPException
@@ -27,9 +27,15 @@ logging.basicConfig(
 )
 
 
-# 命令配置
-ALLOWED_COMMANDS = set(c.strip() for c in os.getenv("ALLOWED_COMMANDS", "echo,date,ls").split(",") if c.strip())  # 允许的命令列表
-COMMAND_TIMEOUT = float(os.getenv("COMMAND_TIMEOUT", "15"))  # 执行超时时间（秒）
+# 命令 & 配置（支持运行时更新）
+# 初始命令白名单来自环境变量，可在运行时通过接口更新
+ALLOWED_COMMANDS: Set[str] = set(
+    c.strip() for c in os.getenv("ALLOWED_COMMANDS", "echo,date,ls").split(",") if c.strip()
+)
+# 命令执行超时时间（秒），允许运行时更新
+COMMAND_TIMEOUT: float = float(os.getenv("COMMAND_TIMEOUT", "15"))
+# 配置更新锁，避免并发写导致竞态
+config_lock: asyncio.Lock = asyncio.Lock()
 
 # 启动模式
 # - standalone 独立容器
@@ -175,6 +181,36 @@ class CommandResult(BaseModel):
     duration_ms: int
 
 
+class ConfigStatus(BaseModel):
+    """当前配置状态"""
+    mode: str
+    node_id: Optional[str]
+    registered: bool
+    register_url: Optional[str]
+    allowed_commands: List[str]
+    command_timeout: float
+    heartbeat_interval: float
+
+
+class ConfigUpdateRequest(BaseModel):
+    """配置更新请求（支持部分字段）"""
+    register_key: str
+    allowed_commands: Optional[List[str]] = None  # 新的命令白名单（覆盖）
+    command_timeout: Optional[float] = None      # 新的命令超时时间（秒）
+
+    def validate_semantics(self):
+        if self.allowed_commands is not None:
+            # 去重 + 基础合法性校验
+            cleaned = [c.strip() for c in self.allowed_commands if c and c.strip()]
+            if not cleaned:
+                raise ValueError("allowed_commands 不能为空")
+            if any(" " in c for c in cleaned):
+                raise ValueError("命令名称不能包含空格")
+        if self.command_timeout is not None:
+            if self.command_timeout <= 0:
+                raise ValueError("command_timeout 必须为正数")
+
+
 app = FastAPI(
     title="AI Software Engineer Worker Node",
     description="支持 Standalone 和 Worker 两种模式的 AI 编程助手后端服务",
@@ -198,7 +234,51 @@ async def healthz():
         "registered": node_id is not None,
         "register_url": REGISTER_URL if NODE_MODE == "worker" else None,
         "allowed_commands": sorted(list(ALLOWED_COMMANDS)),
+        "command_timeout": COMMAND_TIMEOUT,
     }
+
+
+@app.get("/config", response_model=ConfigStatus)
+async def get_config():
+    """获取当前运行时配置（可供主节点查看）"""
+    return ConfigStatus(
+        mode=NODE_MODE,
+        node_id=str(node_id) if node_id else None,
+        registered=node_id is not None,
+        register_url=REGISTER_URL if NODE_MODE == "worker" else None,
+        allowed_commands=sorted(list(ALLOWED_COMMANDS)),
+        command_timeout=COMMAND_TIMEOUT,
+        heartbeat_interval=HEARTBEAT_INTERVAL,
+    )
+
+
+@app.post("/config/update", response_model=ConfigStatus)
+async def update_config(payload: ConfigUpdateRequest):
+    """更新运行时配置（仅限通过 register_key 授权的主节点）。支持部分字段：
+
+    - allowed_commands: 覆盖新的命令白名单
+    - command_timeout:  更新命令执行超时时间
+    """
+    # 基础授权校验
+    if payload.register_key != REGISTER_KEY:
+        raise HTTPException(status_code=403, detail="register_key 不正确，拒绝访问")
+
+    # 语义校验
+    try:
+        payload.validate_semantics()
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+
+    global ALLOWED_COMMANDS, COMMAND_TIMEOUT
+    async with config_lock:
+        if payload.allowed_commands is not None:
+            ALLOWED_COMMANDS = set(payload.allowed_commands)
+            logging.info(f"🔐 allowed_commands 已更新: {sorted(list(ALLOWED_COMMANDS))}")
+        if payload.command_timeout is not None:
+            COMMAND_TIMEOUT = payload.command_timeout
+            logging.info(f"⏱ command_timeout 已更新: {COMMAND_TIMEOUT}s")
+
+    return await get_config()
 
 
 @app.post("/execute", response_model=CommandResult)

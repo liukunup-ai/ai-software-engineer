@@ -23,12 +23,20 @@ RUN curl -fsSL https://deb.nodesource.com/setup_$NODE_VERSION | bash - \
 
 # Install AI coding assistants CLI tools
 COPY docker/scripts/ /usr/local/scripts/
+
+# Add ARGs for controlling CLI installations
+ARG INSTALL_GITHUB_COPILOT=true
+ARG INSTALL_OPENAI_CODEX=true
+ARG INSTALL_CURSOR=true
+ARG INSTALL_ALIBABA_QODER=true
+ARG INSTALL_TENCENT_CODEBUDDY=true
+
 RUN chmod +x /usr/local/scripts/*.sh \
-    && bash /usr/local/scripts/install-github-copilot.sh \
-    && bash /usr/local/scripts/install-openai-codex.sh \
-    && bash /usr/local/scripts/install-cursor.sh \
-    && bash /usr/local/scripts/install-alibaba-qoder.sh \
-    && bash /usr/local/scripts/install-tencent-codebuddy.sh
+    && if [ "$INSTALL_GITHUB_COPILOT" = "true" ]; then bash /usr/local/scripts/install-github-copilot.sh; fi \
+    && if [ "$INSTALL_OPENAI_CODEX" = "true" ]; then bash /usr/local/scripts/install-openai-codex.sh; fi \
+    && if [ "$INSTALL_CURSOR" = "true" ]; then bash /usr/local/scripts/install-cursor.sh; fi \
+    && if [ "$INSTALL_ALIBABA_QODER" = "true" ]; then bash /usr/local/scripts/install-alibaba-qoder.sh; fi \
+    && if [ "$INSTALL_TENCENT_CODEBUDDY" = "true" ]; then bash /usr/local/scripts/install-tencent-codebuddy.sh; fi
 
 # Install Python
 ARG PYTHON_VERSION=3.12

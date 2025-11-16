@@ -16,7 +16,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 
-# 配置日志
+# 日志配置
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -29,21 +29,25 @@ logging.basicConfig(
 
 # 命令配置
 ALLOWED_COMMANDS = set(c.strip() for c in os.getenv("ALLOWED_COMMANDS", "echo,date,ls").split(",") if c.strip())  # 允许的命令列表
-DEFAULT_TIMEOUT = float(os.getenv("COMMAND_TIMEOUT", "15"))  # 执行超时时间（秒）
+COMMAND_TIMEOUT = float(os.getenv("COMMAND_TIMEOUT", "15"))  # 执行超时时间（秒）
 
 # 启动模式
 # - standalone 独立容器
 # - worker     从节点（默认）
 NODE_MODE = os.getenv("NODE_MODE", "worker").lower()
 
-# 后端配置（仅在 worker 模式下需要）
+# 服务配置（仅在 worker 模式下需要）
+## 注册地址和密钥
 REGISTER_URL = os.getenv("REGISTER_URL", "http://localhost:8000")  # 注册地址
-REGISTER_KEY = os.getenv("REGISTER_KEY", "please-input-your-key")  # 注册密钥
+REGISTER_KEY = os.getenv("REGISTER_KEY", "key")  # 注册密钥
+# 节点元数据
 NODE_NAME = os.getenv("NODE_NAME", socket.gethostname())  # 从节点名称
-NODE_HOST = os.getenv("NODE_HOST", "127.0.0.1")  # 主机地址
-NODE_DESC = os.getenv("NODE_DESC", "Worker Node")  # 从节点描述
-NODE_TAGS = os.getenv("NODE_TAGS", "worker")  # 从节点标签
-HEARTBEAT_INTERVAL = float(os.getenv("HEARTBEAT_INTERVAL", "30"))  # 心跳间隔（秒）
+NODE_HOST = os.getenv("NODE_HOST", socket.gethostbyname(socket.gethostname()))  # 从节点主机地址
+NODE_PORT = int(os.getenv("NODE_PORT", "8007"))  # 从节点端口
+NODE_DESC = os.getenv("NODE_DESC", "AI-Software-Engineer")  # 从节点描述
+NODE_TAGS = os.getenv("NODE_TAGS", "worker,ai")  # 从节点标签
+# 心跳间隔（秒）
+HEARTBEAT_INTERVAL = float(os.getenv("HEARTBEAT_INTERVAL", "30"))
 
 # 全局状态
 node_id: Optional[uuid.UUID] = None
@@ -66,7 +70,7 @@ async def register() -> Optional[uuid.UUID]:
                 f"{REGISTER_URL}/api/v1/nodes/register",
                 json={
                     "name": NODE_NAME,
-                    "host": NODE_HOST,
+                    "host": f"{NODE_HOST}:{NODE_PORT}",
                     "register_key": REGISTER_KEY,
                     "desc": NODE_DESC,
                     "tags": NODE_TAGS if NODE_TAGS else None,
@@ -134,7 +138,7 @@ async def lifespan(app: FastAPI):
         logging.info("🔧 仅提供容器环境")
     else:
         logging.info("🚀 启动模式: Worker (从节点)")
-        logging.info(f"🏭 节点名称: {NODE_NAME} ({NODE_HOST})")
+        logging.info(f"🏭 节点名称: {NODE_NAME} ({NODE_HOST}:{NODE_PORT})")
         logging.info(f"📡 后端地址: {REGISTER_URL}")
 
         # 注册节点
@@ -233,7 +237,7 @@ async def execute_command(payload: CommandRequest):
         try:
             stdout, stderr = await asyncio.wait_for(
                 proc.communicate(),
-                timeout=DEFAULT_TIMEOUT,
+                timeout=COMMAND_TIMEOUT,
             )
         except asyncio.TimeoutError:
             proc.kill()
@@ -265,4 +269,4 @@ async def execute_command(payload: CommandRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8007, reload=False)
+    uvicorn.run("app.main:app", host="0.0.0.0", port=NODE_PORT, reload=False)

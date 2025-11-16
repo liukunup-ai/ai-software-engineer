@@ -1,0 +1,20 @@
+---
+services:
+  # AI Software Engineer - Worker Node
+  ai-software-engineer:
+    image: ${REGISTRY:-docker.io}/${IMAGE_NAME:-liukunup/ai-software-engineer}:${IMAGE_TAG:-latest}
+    container_name: ai-software-engineer
+    restart: unless-stopped
+    ports:
+      - "8007:8007"
+    environment:
+      NODE_MODE: ${NODE_MODE:-worker}
+      REGISTER_URL: ${REGISTER_URL:-http://localhost:8000}
+      REGISTER_KEY: ${REGISTER_KEY:-key}
+      NODE_NAME: ${NODE_NAME:-ai-software-engineer}
+      NODE_HOST: ${NODE_HOST}
+      NODE_DESC: ${NODE_DESC:-AI-Software-Engineer}
+      NODE_TAGS: ${NODE_TAGS:-worker,ai}
+      HEARTBEAT_INTERVAL: ${HEARTBEAT_INTERVAL:-30}
+      ALLOWED_COMMANDS: ${ALLOWED_COMMANDS:-echo,date,ls}
+      COMMAND_TIMEOUT: ${COMMAND_TIMEOUT:-15}

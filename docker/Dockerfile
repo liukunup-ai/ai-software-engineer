@@ -28,6 +28,8 @@ COPY docker/scripts/ /usr/local/scripts/
 ARG INSTALL_GITHUB_COPILOT=true
 ARG INSTALL_OPENAI_CODEX=true
 ARG INSTALL_CURSOR=true
+ARG INSTALL_OPENCODE=true
+ARG INSTALL_CLAUDE_CODE=true
 ARG INSTALL_ALIBABA_QODER=true
 ARG INSTALL_TENCENT_CODEBUDDY=true
 
@@ -35,6 +37,8 @@ RUN chmod +x /usr/local/scripts/*.sh \
     && if [ "$INSTALL_GITHUB_COPILOT" = "true" ]; then bash /usr/local/scripts/install-github-copilot.sh; fi \
     && if [ "$INSTALL_OPENAI_CODEX" = "true" ]; then bash /usr/local/scripts/install-openai-codex.sh; fi \
     && if [ "$INSTALL_CURSOR" = "true" ]; then bash /usr/local/scripts/install-cursor.sh; fi \
+    && if [ "$INSTALL_OPENCODE" = "true" ]; then bash /usr/local/scripts/install-opencode.sh; fi \
+    && if [ "$INSTALL_CLAUDE_CODE" = "true" ]; then bash /usr/local/scripts/install-claude-code.sh; fi \
     && if [ "$INSTALL_ALIBABA_QODER" = "true" ]; then bash /usr/local/scripts/install-alibaba-qoder.sh; fi \
     && if [ "$INSTALL_TENCENT_CODEBUDDY" = "true" ]; then bash /usr/local/scripts/install-tencent-codebuddy.sh; fi
 

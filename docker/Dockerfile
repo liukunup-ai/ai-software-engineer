@@ -3,15 +3,18 @@
 ARG UBUNTU_VERSION=24.04
 FROM ubuntu:$UBUNTU_VERSION
 
-ENV DEBIAN_FRONTEND=noninteractive
+ENV DEBIAN_FRONTEND=noninteractive \
+    TZ=Asia/Shanghai
 
 # Install dependencies
-RUN apt update && apt install -y \
+RUN apt-get update && apt-get install -y \
     ca-certificates \
     curl \
     wget \
     git \
     vim \
+    nano \
+    unzip \
     tree \
     && rm -rf /var/lib/apt/lists/*
 
@@ -21,18 +24,21 @@ RUN curl -fsSL https://deb.nodesource.com/setup_$NODE_VERSION | bash - \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Docker CLI
-RUN apt update && apt install -y ca-certificates curl && \
+# Install Docker CLI tools
+RUN apt-get update && apt-get install -y ca-certificates curl && \
     install -m 0755 -d /etc/apt/keyrings && \
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc && \
     chmod a+r /etc/apt/keyrings/docker.asc && \
-    apt update && \
-    apt install -y docker-ce-cli docker-buildx-plugin docker-compose-plugin
+    echo "Types: deb" > /etc/apt/sources.list.d/docker.sources && \
+    echo "URIs: https://download.docker.com/linux/ubuntu" >> /etc/apt/sources.list.d/docker.sources && \
+    echo "Suites: $(. /etc/os-release && echo ${UBUNTU_CODENAME:-$VERSION_CODENAME})" >> /etc/apt/sources.list.d/docker.sources && \
+    echo "Components: stable" >> /etc/apt/sources.list.d/docker.sources && \
+    echo "Signed-By: /etc/apt/keyrings/docker.asc" >> /etc/apt/sources.list.d/docker.sources && \
+    apt-get update && \
+    apt-get install -y docker-ce-cli docker-buildx-plugin docker-compose-plugin && \
+    rm -rf /var/lib/apt/lists/*
 
 # Install AI coding assistants CLI tools
-COPY docker/scripts/ /usr/local/scripts/
-
-# Add ARGs for controlling CLI installations
 ARG INSTALL_GITHUB_COPILOT=true
 ARG INSTALL_OPENAI_CODEX=true
 ARG INSTALL_CURSOR=true
@@ -40,7 +46,7 @@ ARG INSTALL_OPENCODE=true
 ARG INSTALL_CLAUDE_CODE=true
 ARG INSTALL_ALIBABA_QODER=true
 ARG INSTALL_TENCENT_CODEBUDDY=true
-
+COPY docker/scripts/ /usr/local/scripts/
 RUN chmod +x /usr/local/scripts/*.sh \
     && if [ "$INSTALL_GITHUB_COPILOT" = "true" ]; then bash /usr/local/scripts/install-github-copilot.sh; fi \
     && if [ "$INSTALL_OPENAI_CODEX" = "true" ]; then bash /usr/local/scripts/install-openai-codex.sh; fi \
@@ -68,13 +74,13 @@ COPY requirements.txt .
 COPY docker/entrypoint.sh .
 RUN python -m venv .venv && \
     . .venv/bin/activate && \
-    pip install --upgrade pip -i https://mirrors.aliyun.com/pypi/simple && \
+    pip install --upgrade pip && \
     python --version && \
-    pip install --no-cache-dir -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple
+    pip install --no-cache-dir -r requirements.txt
 
 EXPOSE 8007
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8007/healthz || exit 1
 
 ENTRYPOINT [ "./entrypoint.sh" ]

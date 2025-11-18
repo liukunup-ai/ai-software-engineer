@@ -11,6 +11,16 @@ on:
 
 env:
   IMAGE_NAME: ai-software-engineer
+  UBUNTU_VERSION: 24.04
+  NODE_VERSION: 22.x
+  PYTHON_VERSION: 3.12
+  INSTALL_GITHUB_COPILOT: true
+  INSTALL_OPENAI_CODEX: true
+  INSTALL_CURSOR: true
+  INSTALL_OPENCODE: true
+  INSTALL_CLAUDE_CODE: true
+  INSTALL_ALIBABA_QODER: true
+  INSTALL_TENCENT_CODEBUDDY: true
 
 jobs:
 
@@ -23,8 +33,10 @@ jobs:
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
+
       - name: Setup QEMU
         uses: docker/setup-qemu-action@v3
+
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -48,14 +60,26 @@ jobs:
         with:
           context: .
           platforms: linux/amd64
-          file: Dockerfile
-          push: false
+          file: docker/Dockerfile
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            UBUNTU_VERSION=${{ env.UBUNTU_VERSION }}
+            NODE_VERSION=${{ env.NODE_VERSION }}
+            PYTHON_VERSION=${{ env.PYTHON_VERSION }}
+            INSTALL_GITHUB_COPILOT=${{ env.INSTALL_GITHUB_COPILOT }}
+            INSTALL_OPENAI_CODEX=${{ env.INSTALL_OPENAI_CODEX }}
+            INSTALL_CURSOR=${{ env.INSTALL_CURSOR }}
+            INSTALL_OPENCODE=${{ env.INSTALL_OPENCODE }}
+            INSTALL_CLAUDE_CODE=${{ env.INSTALL_CLAUDE_CODE }}
+            INSTALL_ALIBABA_QODER=${{ env.INSTALL_ALIBABA_QODER }}
+            INSTALL_TENCENT_CODEBUDDY=${{ env.INSTALL_TENCENT_CODEBUDDY }}
 
       - name: Update Docker Hub Repository Description
         uses: peter-evans/dockerhub-description@v4
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
-          repository: ${{ env.DOCKER_HUB_REPO }}
+          repository: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.IMAGE_NAME }}
+          readme-filepath: README.md

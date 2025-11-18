@@ -6,11 +6,11 @@ FROM ubuntu:$UBUNTU_VERSION
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt update && apt install -y \
     ca-certificates \
-    git \
     curl \
     wget \
+    git \
     vim \
     tree \
     && rm -rf /var/lib/apt/lists/*
@@ -20,6 +20,14 @@ ARG NODE_VERSION=22.x
 RUN curl -fsSL https://deb.nodesource.com/setup_$NODE_VERSION | bash - \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Docker CLI
+RUN apt update && apt install -y ca-certificates curl && \
+    install -m 0755 -d /etc/apt/keyrings && \
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc && \
+    chmod a+r /etc/apt/keyrings/docker.asc && \
+    apt update && \
+    apt install -y docker-ce-cli docker-buildx-plugin docker-compose-plugin
 
 # Install AI coding assistants CLI tools
 COPY docker/scripts/ /usr/local/scripts/
